@@ -9,6 +9,10 @@ function App() {
   const [email, setEmail] = useState('')
   const [formState, setFormState] = useState<'idle' | 'invalid' | 'loading' | 'success'>('idle')
 
+  const GOOGLE_FORM_URL =
+    'https://docs.google.com/forms/d/e/1FAIpQLScQRiHubMIsVHb4l-xgWrNuTp9enlf0uFqJ-QnaGzYa5PMQDw/formResponse'
+  const ENTRY_ID = 'entry.2018604987'
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const normalizedEmail = email.trim().toLowerCase()
@@ -17,16 +21,32 @@ function App() {
       return
     }
     setFormState('loading')
-    const formData = new FormData()
-    formData.append('entry.1996927084', normalizedEmail)
-    try {
-      await fetch(
-        'https://docs.google.com/forms/d/e/1FAIpQLScjfSU7I3MvRE1gjMOrUj_37FoUS8RjcuU7wPvvaiYA6QSJTw/formResponse',
-        { method: 'POST', body: formData, mode: 'no-cors' }
-      )
-    } catch {
-      // Google Forms doesn't return CORS headers, but the submission still goes through
-    }
+
+    // Submit via hidden iframe to bypass CORS restrictions
+    const iframe = document.createElement('iframe')
+    iframe.name = 'google-form-iframe'
+    iframe.style.display = 'none'
+    document.body.appendChild(iframe)
+
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = GOOGLE_FORM_URL
+    form.target = 'google-form-iframe'
+
+    const input = document.createElement('input')
+    input.name = ENTRY_ID
+    input.value = normalizedEmail
+    form.appendChild(input)
+
+    document.body.appendChild(form)
+    form.submit()
+
+    // Clean up after submission
+    setTimeout(() => {
+      document.body.removeChild(form)
+      document.body.removeChild(iframe)
+    }, 2000)
+
     setFormState('success')
     setEmail('')
   }
