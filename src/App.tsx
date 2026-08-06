@@ -17,7 +17,16 @@ function App() {
       return
     }
     setFormState('loading')
-    await new Promise((resolve) => setTimeout(resolve, 900))
+    const formData = new FormData()
+    formData.append('entry.1996927084', normalizedEmail)
+    try {
+      await fetch(
+        'https://docs.google.com/forms/d/e/1FAIpQLScjfSU7I3MvRE1gjMOrUj_37FoUS8RjcuU7wPvvaiYA6QSJTw/formResponse',
+        { method: 'POST', body: formData, mode: 'no-cors' }
+      )
+    } catch {
+      // Google Forms doesn't return CORS headers, but the submission still goes through
+    }
     setFormState('success')
     setEmail('')
   }
