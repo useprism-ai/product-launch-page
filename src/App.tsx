@@ -3,11 +3,8 @@ import type { FormEvent } from 'react'
 import './App.css'
 
 const reel1 = '/reels/fmcg_ad.png'
-const reel2 = '/reels/appartment_tour_ad.png'
-const reel3 = '/reels/saas_explain_Ad.png'
-const reel4 = '/reels/product_launch_Ad.png'
-const reel5 = '/reels/pet_foods_ad.png'
-const reel6 = '/reels/tryserum_ugc_female.png'
+const reel2 = '/reels/pet_foods_ad.png'
+const reel3 = '/reels/product_launch_ugc.png'
 
 const GOOGLE_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLScQRiHubMIsVHb4l-xgWrNuTp9enlf0uFqJ-QnaGzYa5PMQDw/formResponse'
@@ -133,7 +130,7 @@ function App() {
             </div>
           </div>
           <div className="reel-frame reel-center">
-            <img src={reel5} alt="" />
+            <img src={reel2} alt="" />
             <div className="reel-meta">
               <span className="reel-label">Pet Foods Ad</span>
               <span className="reel-dur">:15</span>
@@ -141,9 +138,9 @@ function App() {
             <div className="reel-play">▶</div>
           </div>
           <div className="reel-frame reel-back-right">
-            <img src={reel6} alt="" />
+            <img src={reel3} alt="" />
             <div className="reel-meta">
-              <span className="reel-label">Skin Care Ad</span>
+              <span className="reel-label">Product Launch Ad</span>
               <span className="reel-dur">:45</span>
             </div>
           </div>
