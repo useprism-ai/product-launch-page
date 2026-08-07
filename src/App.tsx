@@ -3,9 +3,6 @@ import type { FormEvent } from 'react'
 import './App.css'
 
 const reel1 = '/reels/fmcg_ad.png'
-const reel2 = '/reels/appartment_tour_ad.png'
-const reel3 = '/reels/saas_explain_Ad.png'
-const reel4 = '/reels/product_launch_Ad.png'
 const reel5 = '/reels/pet_foods_ad.png'
 const reel6 = '/reels/tryserum_ugc_female.png'
 
