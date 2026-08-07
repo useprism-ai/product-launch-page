@@ -621,4 +621,8 @@
   .proof-inner {
     gap: 1.5rem;
   }
+
+  .section-inner {
+    padding: 2.5rem 1rem;
+  }
 }
