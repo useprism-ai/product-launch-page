@@ -1,201 +1,194 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import './App.css'
-import reel1 from './assets/tryserum_ugc_female.png'
-import reel2 from './assets/product_launch_ugc.png'
-import reel3 from './assets/before_and_after_ugc.png'
 
-function App() {
+const reel1 = '/reels/fmcg_ad.png'
+const reel2 = '/reels/appartment_tour_ad.png'
+const reel3 = '/reels/saas_explain_Ad.png'
+const reel4 = '/reels/product_launch_Ad.png'
+const reel5 = '/reels/pet_foods_ad.png'
+const reel6 = '/reels/tryserum_ugc_female.png'
+
+const GOOGLE_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLScQRiHubMIsVHb4l-xgWrNuTp9enlf0uFqJ-QnaGzYa5PMQDw/formResponse'
+const ENTRY_ID = 'entry.2018604987'
+
+const FORMATS = [
+  'Product Launch', 'Founder Story', 'Problem → Solution', 'Testimonial',
+  'Comparison', 'How-To', 'Unboxing', 'Before & After', 'Meme',
+  'Product Showcase', 'AI Talent', 'Explainer', 'Social Proof', 'Lifestyle',
+]
+
+const INDUSTRIES = [
+  'Ecommerce', 'SaaS', 'D2C Brands', 'Shopify Stores', 'Amazon Sellers',
+  'Marketing Agencies', 'Restaurants', 'Real Estate', 'Travel', 'Fitness',
+  'Education', 'Finance', 'Automotive', 'Pet Brands', 'Fashion',
+  'Coffee & F&B', 'Home & Living', 'Mobile Apps',
+]
+
+function useEarlyAccess() {
   const [email, setEmail] = useState('')
-  const [formState, setFormState] = useState<'idle' | 'invalid' | 'loading' | 'success'>('idle')
+  const [state, setState] = useState<'idle' | 'invalid' | 'loading' | 'success'>('idle')
 
-  const GOOGLE_FORM_URL =
-    'https://docs.google.com/forms/d/e/1FAIpQLScQRiHubMIsVHb4l-xgWrNuTp9enlf0uFqJ-QnaGzYa5PMQDw/formResponse'
-  const ENTRY_ID = 'entry.2018604987'
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const normalized = email.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) { setState('invalid'); return }
+    setState('loading')
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    const normalizedEmail = email.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setFormState('invalid')
-      return
-    }
-    setFormState('loading')
-
-    // Submit via hidden iframe to bypass CORS restrictions
     const iframe = document.createElement('iframe')
-    iframe.name = 'google-form-iframe'
+    iframe.name = 'prism-ea-frame'
     iframe.style.display = 'none'
     document.body.appendChild(iframe)
-
     const form = document.createElement('form')
     form.method = 'POST'
     form.action = GOOGLE_FORM_URL
-    form.target = 'google-form-iframe'
-
+    form.target = 'prism-ea-frame'
     const input = document.createElement('input')
     input.name = ENTRY_ID
-    input.value = normalizedEmail
+    input.value = normalized
     form.appendChild(input)
-
     document.body.appendChild(form)
     form.submit()
+    setTimeout(() => { document.body.removeChild(form); document.body.removeChild(iframe) }, 2000)
 
-    // Clean up after submission
-    setTimeout(() => {
-      document.body.removeChild(form)
-      document.body.removeChild(iframe)
-    }, 2000)
-
-    setFormState('success')
+    setState('success')
     setEmail('')
   }
 
+  return { email, setEmail, state, setState, submit }
+}
+
+function EarlyAccessForm({ id, variant }: { id?: string; variant?: 'hero' | 'section' }) {
+  const { email, setEmail, state, setState, submit } = useEarlyAccess()
+
+  if (state === 'success') {
+    return (
+      <div className={`ea-success ${variant === 'section' ? 'ea-success-section' : ''}`}>
+        <p className="ea-success-icon">✦</p>
+        <p className="ea-success-title">You're in.</p>
+        <p className="ea-success-sub">We'll send your invite before the public launch.</p>
+      </div>
+    )
+  }
+
+  return (
+    <form className={`ea-form ${variant === 'section' ? 'ea-form-section' : ''}`} id={id} onSubmit={submit} noValidate>
+      <div className="ea-row">
+        <input
+          type="email"
+          name="email"
+          autoComplete="email"
+          placeholder="you@company.com"
+          value={email}
+          onChange={(e) => { setEmail(e.target.value); if (state !== 'idle') setState('idle') }}
+          aria-invalid={state === 'invalid'}
+        />
+        <button type="submit" disabled={state === 'loading'}>
+          {state === 'loading' ? 'Reserving…' : 'Get early access'}
+        </button>
+      </div>
+      <p className="ea-hint" role="status" aria-live="polite">
+        {state === 'invalid' ? 'Enter a valid work email.' : 'Private beta · No credit card required'}
+      </p>
+    </form>
+  )
+}
+
+function App() {
   return (
     <>
-      {/* ── NAV ── */}
       <nav className="nav">
         <div className="nav-inner">
-          <p className="logo">▲ Prism</p>
+          <a href="#" className="logo"><img src="/favicon.svg" alt="Prism" className="logo-img" /> Prism</a>
           <ul>
-            <li><a href="#features">Features</a></li>
+            <li><a href="#capabilities">Capabilities</a></li>
             <li><a href="#how">How it works</a></li>
+            <li><a href="#formats">Formats</a></li>
             <li><a href="#team">Team</a></li>
           </ul>
-          <a href="#waitlist" className="nav-cta">Get early access</a>
+          <a href="#early-access" className="nav-cta">Get early access</a>
         </div>
       </nav>
 
       {/* ── HERO ── */}
       <section className="hero">
-        <div className="hero-bg" aria-hidden="true">
-          <div className="grain" />
-        </div>
-
-        <div className="hero-inner">
-          <p className="pill">AI-powered UGC ad engine</p>
-          <h1>
-            Stop hiring actors.<br />
-            <span>Start generating ads.</span>
-          </h1>
+        <div className="hero-bg" aria-hidden="true"><div className="grain" /></div>
+        <div className="hero-content">
+          <p className="overline">The AI creative engine for performance marketing</p>
+          <h1>One product.<br /><span>Infinite ads.</span></h1>
           <p className="hero-sub">
-            Prism creates scroll-stopping short-form video ads complete with AI voiceover,
-            storyboard, and marketing-ready scripts. No cameras. No editing. Just results.
+            Upload your product once. Prism produces hundreds of ad creatives — hooks, scripts, storyboards,
+            voiceovers, and finished variations — so you can test faster, find winners sooner, and scale what converts.
           </p>
-
-          <div id="waitlist" className="waitlist-anchor" />
-          <form className="cta-form" onSubmit={handleSubmit} noValidate>
-            <input
-              id="waitlist-email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="Enter your work email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                if (formState !== 'idle') setFormState('idle')
-              }}
-              aria-invalid={formState === 'invalid'}
-              aria-describedby="cta-status"
-            />
-            <button type="submit" disabled={formState === 'loading'}>
-              {formState === 'loading' ? 'Joining…' : 'Join waitlist →'}
-            </button>
-          </form>
-          <p id="cta-status" className="cta-status" role="status" aria-live="polite">
-            {formState === 'invalid' && 'Please enter a valid email address.'}
-            {formState === 'success' && "You're in! We'll reach out soon."}
-            {formState === 'idle' && 'Free to join · No credit card required'}
-          </p>
+          <EarlyAccessForm variant="hero" />
         </div>
 
-        <div className="hero-visual" aria-hidden="true">
-          <div className="phone phone-center">
+        <div className="hero-reels" aria-hidden="true">
+          <div className="reel-frame reel-back-left">
             <img src={reel1} alt="" />
-            <div className="phone-overlay">
-              <span className="phone-badge">▶ AI Generated</span>
-              <p>"Try this serum" · UGC hook</p>
+            <div className="reel-meta">
+              <span className="reel-label">Coffee Ad</span>
+              <span className="reel-dur">:30</span>
             </div>
           </div>
-          <div className="phone phone-left">
-            <img src={reel2} alt="" />
-            <div className="phone-overlay">
-              <span className="phone-badge">▶ AI Avatar</span>
-              <p>Product launch</p>
+          <div className="reel-frame reel-center">
+            <img src={reel5} alt="" />
+            <div className="reel-meta">
+              <span className="reel-label">Pet Foods Ad</span>
+              <span className="reel-dur">:15</span>
             </div>
+            <div className="reel-play">▶</div>
           </div>
-          <div className="phone phone-right">
-            <img src={reel3} alt="" />
-            <div className="phone-overlay">
-              <span className="phone-badge">▶ AI Voiceover</span>
-              <p>Before &amp; after</p>
+          <div className="reel-frame reel-back-right">
+            <img src={reel6} alt="" />
+            <div className="reel-meta">
+              <span className="reel-label">Skin Care Ad</span>
+              <span className="reel-dur">:45</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── PROOF BAR ── */}
-      <section className="proof-bar">
-        <div className="proof-inner">
-          <div className="proof-stat">
-            <strong>15×</strong>
-            <span>faster ad creation</span>
-          </div>
-          <div className="proof-divider" />
-          <div className="proof-stat">
-            <strong>70%</strong>
-            <span>lower production cost</span>
-          </div>
-          <div className="proof-divider" />
-          <div className="proof-stat">
-            <strong>∞</strong>
-            <span>ad variations per brief</span>
-          </div>
-          <div className="proof-divider" />
-          <div className="proof-stat">
-            <strong>0</strong>
-            <span>actors needed</span>
-          </div>
+      {/* ── SIGNAL STRIP ── */}
+      <section className="signal-strip">
+        <div className="signal-inner">
+          <p><strong>100+</strong> creative variations per brief</p>
+          <p><strong>10×</strong> faster than agencies</p>
+          <p><strong>Every</strong> format, every platform</p>
+          <p><strong>Zero</strong> production overhead</p>
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section className="features" id="features">
+      {/* ── CAPABILITIES ── */}
+      <section className="capabilities" id="capabilities">
         <div className="section-inner">
-          <p className="section-label">What Prism does</p>
-          <h2>Your entire ad production pipeline, replaced by AI</h2>
-
-          <div className="feature-grid">
-            <article className="feat">
-              <div className="feat-icon">🎬</div>
-              <h3>AI Storyboard</h3>
-              <p>Auto-generate scene-by-scene ad flows optimized for TikTok, Reels, and Shorts from a single product description.</p>
+          <p className="section-label">Capabilities</p>
+          <h2>Everything between brief and live ad — automated</h2>
+          <div className="cap-grid">
+            <article>
+              <h3>Hook Engine</h3>
+              <p>Prism writes dozens of scroll-stopping openers per concept. Test hooks at the speed your ad account demands.</p>
             </article>
-            <article className="feat">
-              <div className="feat-icon">🎙️</div>
-              <h3>Voice Generation</h3>
-              <p>Natural voiceovers matched to persona, accent, and brand tone. No recording sessions, no voice actors.</p>
+            <article>
+              <h3>Script Studio</h3>
+              <p>Full ad scripts with value angles, objection handling, and CTAs — structured for performance, not just views.</p>
             </article>
-            <article className="feat">
-              <div className="feat-icon">📝</div>
-              <h3>Script Engine</h3>
-              <p>AI writes hooks, value props, and CTAs designed for scroll-stopping performance on every platform.</p>
+            <article>
+              <h3>Storyboard Architect</h3>
+              <p>Scene-by-scene visual plans optimized for pacing, retention curves, and platform-specific attention patterns.</p>
             </article>
-            <article className="feat">
-              <div className="feat-icon">🔄</div>
-              <h3>Infinite Variations</h3>
-              <p>Generate dozens of unique ad angles from one brief. A/B test at scale without hiring more creatives.</p>
+            <article>
+              <h3>Voice Production</h3>
+              <p>Natural voiceovers matched to brand tone, persona, and language. Dozens of voices, zero recording sessions.</p>
             </article>
-            <article className="feat">
-              <div className="feat-icon">📱</div>
-              <h3>Platform-Native</h3>
-              <p>Every ad is built for the platform it runs on. Vertical, horizontal, square — all aspect ratios covered.</p>
+            <article>
+              <h3>Creative Multiplier</h3>
+              <p>One brief becomes 100+ unique variations. Different angles, tones, formats, and lengths — ready for split testing.</p>
             </article>
-            <article className="feat">
-              <div className="feat-icon">⚡</div>
-              <h3>Launch in Minutes</h3>
-              <p>Go from brand brief to ready-to-publish UGC ads in minutes, not weeks. Ship campaigns at the speed of thought.</p>
+            <article>
+              <h3>Platform Intelligence</h3>
+              <p>Every creative is built for where it runs. Aspect ratios, pacing, and hooks tuned for Meta, TikTok, YouTube, and more.</p>
             </article>
           </div>
         </div>
@@ -205,33 +198,51 @@ function App() {
       <section className="how" id="how">
         <div className="section-inner">
           <p className="section-label">How it works</p>
-          <h2>From brief to ad in 4 steps</h2>
-
+          <h2>From product to performance creative in minutes</h2>
           <div className="steps">
             <div className="step">
               <div className="step-num">01</div>
-              <div className="step-line" />
-              <h3>Describe your product</h3>
-              <p>Paste your landing page, describe your audience, set the campaign goal.</p>
+              <h3>Upload your product</h3>
+              <p>Share a URL, description, or brand assets. Prism learns your product, audience, and positioning.</p>
             </div>
             <div className="step">
               <div className="step-num">02</div>
-              <div className="step-line" />
-              <h3>Prism generates ads</h3>
-              <p>AI creates multiple ad concepts with scripts, voiceover, and storyboards.</p>
+              <h3>Prism crafts your creatives</h3>
+              <p>Hooks, scripts, storyboards, voiceovers, and finished ad variations — produced in minutes, not weeks.</p>
             </div>
             <div className="step">
               <div className="step-num">03</div>
-              <div className="step-line" />
-              <h3>Pick your winners</h3>
-              <p>Review, tweak, and select the best-performing angles for your campaign.</p>
+              <h3>Select your strongest angles</h3>
+              <p>Review creative concepts, refine messaging, and choose the variations that match your campaign goals.</p>
             </div>
             <div className="step">
               <div className="step-num">04</div>
-              <div className="step-line" />
-              <h3>Publish everywhere</h3>
-              <p>Export platform-ready ads and launch across TikTok, Instagram, YouTube.</p>
+              <h3>Launch and iterate</h3>
+              <p>Export platform-ready creatives. Test, learn, and produce fresh variations on demand.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CREATIVE FORMATS ── */}
+      <section className="formats" id="formats">
+        <div className="section-inner">
+          <p className="section-label">Creative formats</p>
+          <h2>Every ad format your campaigns need</h2>
+          <p className="formats-sub">Not just one type of creative. Prism produces the full spectrum of ad formats that performance teams rely on.</p>
+          <div className="format-tags">
+            {FORMATS.map((f) => <span key={f} className="format-tag">{f}</span>)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── INDUSTRIES ── */}
+      <section className="industries">
+        <div className="section-inner">
+          <p className="section-label">Built for every vertical</p>
+          <h2>Any product. Any industry. Any market.</h2>
+          <div className="industry-grid">
+            {INDUSTRIES.map((i) => <span key={i}>{i}</span>)}
           </div>
         </div>
       </section>
@@ -246,31 +257,37 @@ function App() {
               <div className="avatar">MM</div>
               <div>
                 <strong>Manivel Manoharan</strong>
-                <span>Head of Engineering &amp; Co-Founder</span>
+                <span>Head of Engineering & Co-Founder</span>
               </div>
             </div>
             <div className="member">
               <div className="avatar">KM</div>
               <div>
                 <strong>Komalalakshmi Meghanathan</strong>
-                <span>Head of Marketing &amp; Co-Founder</span>
+                <span>Head of Marketing & Co-Founder</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="final-cta">
-        <div className="section-inner">
-          <h2>Ready to create ads that convert?</h2>
-          <p>Join hundreds of brands waiting to use Prism. Be first in line.</p>
-          <a href="#waitlist" className="final-btn">Join the waitlist →</a>
+      {/* ── EARLY ACCESS ── */}
+      <section className="early-access" id="early-access">
+        <div className="section-inner ea-inner">
+          <p className="section-label">Early access</p>
+          <h2>Be first to create ads with Prism</h2>
+          <p className="ea-copy">
+            Join the private beta before public launch. Built for marketers, founders, and agencies who need more creative volume without more headcount.
+          </p>
+          <EarlyAccessForm variant="section" />
         </div>
       </section>
 
       <footer className="footer">
-        <p>© 2026 Prism · AI-generated UGC ads for modern brands</p>
+        <div className="footer-inner">
+          <p className="footer-logo">Prism</p>
+          <p>© 2026 Prism · The AI creative engine for performance marketing</p>
+        </div>
       </footer>
     </>
   )
