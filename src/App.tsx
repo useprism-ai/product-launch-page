@@ -102,7 +102,6 @@ function App() {
             <li><a href="#capabilities">Capabilities</a></li>
             <li><a href="#how">How it works</a></li>
             <li><a href="#formats">Formats</a></li>
-            <li><a href="#team">Team</a></li>
           </ul>
           <a href="#early-access" className="nav-cta">Get early access</a>
         </div>
@@ -240,30 +239,6 @@ function App() {
           <h2>Any product. Any industry. Any market.</h2>
           <div className="industry-grid">
             {INDUSTRIES.map((i) => <span key={i}>{i}</span>)}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TEAM ── */}
-      <section className="team" id="team">
-        <div className="section-inner">
-          <p className="section-label">The team</p>
-          <h2>Built by operators who understand growth</h2>
-          <div className="team-grid">
-            <div className="member">
-              <div className="avatar">MM</div>
-              <div>
-                <strong>Manivel Manoharan</strong>
-                <span>Head of Engineering & Co-Founder</span>
-              </div>
-            </div>
-            <div className="member">
-              <div className="avatar">KM</div>
-              <div>
-                <strong>Komalalakshmi Meghanathan</strong>
-                <span>Head of Marketing & Co-Founder</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>
