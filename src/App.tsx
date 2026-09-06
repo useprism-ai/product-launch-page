@@ -10,6 +10,74 @@ const GOOGLE_FORM_URL =
   'https://docs.google.com/forms/d/e/1FAIpQLScQRiHubMIsVHb4l-xgWrNuTp9enlf0uFqJ-QnaGzYa5PMQDw/formResponse'
 const ENTRY_ID = 'entry.2018604987'
 
+// Google Form field entry IDs — extracted from FB_PUBLIC_LOAD_DATA_ (authoritative source)
+const PROFILE_ENTRY_IDS = {
+  role: 'entry.1976973393',
+  adSpend: 'entry.649849349',
+  creativesPerMonth: 'entry.1595821606',
+  currentMethod: 'entry.522611118',
+  painPoint: 'entry.1347220797',
+  prismHelp: 'entry.145180785',
+  toolSpend: 'entry.1013446723',
+  testInterest: 'entry.134247264',
+}
+
+type ProfileAnswers = {
+  role: string
+  adSpend: string
+  creativesPerMonth: string
+  currentMethod: string[]
+  painPoint: string
+  prismHelp: string[]
+  toolSpend: string
+  testInterest: string
+}
+
+const EMPTY_PROFILE: ProfileAnswers = {
+  role: '', adSpend: '', creativesPerMonth: '', currentMethod: [],
+  painPoint: '', prismHelp: [], toolSpend: '', testInterest: '',
+}
+
+type Question =
+  | { key: keyof ProfileAnswers; type: 'single'; title: string; options: string[] }
+  | { key: keyof ProfileAnswers; type: 'multi'; title: string; options: string[] }
+  | { key: keyof ProfileAnswers; type: 'text'; title: string; placeholder: string }
+
+const QUESTIONS: Question[] = [
+  {
+    key: 'role', type: 'single', title: 'What best describes you?',
+    options: ['Ecommerce/DTC founder', 'Performance marketer', 'Marketing agency', 'SaaS founder', 'SaaS marketer', 'Creative/designer', 'Other'],
+  },
+  {
+    key: 'adSpend', type: 'single', title: "What's your monthly paid-ad spend?",
+    options: ['Not running ads', '<$1K', '$1–5K', '$5–10K', '$10–50K', '$50K+'],
+  },
+  {
+    key: 'creativesPerMonth', type: 'single', title: 'How many new creatives do you produce/test per month?',
+    options: ['0–5', '5–10', '10–30', '30–50', '50–100', '100+'],
+  },
+  {
+    key: 'currentMethod', type: 'multi', title: 'How do you currently produce them?',
+    options: ['In-house', 'Freelancer', 'Agency', 'UGC creators', 'AI tools', 'Myself'],
+  },
+  {
+    key: 'painPoint', type: 'text', title: "What's the biggest pain in your current creative workflow?",
+    placeholder: 'Type your answer…',
+  },
+  {
+    key: 'prismHelp', type: 'multi', title: 'What would you most want Prism to help with?',
+    options: ['Generate variations', 'Find hooks/angles', 'Turn winners into new experiments', 'Analyze creative performance', 'Tell me what to test next', 'Manage creative testing', 'Create finished ads'],
+  },
+  {
+    key: 'toolSpend', type: 'single', title: 'What do you currently spend on creative production/tools per month?',
+    options: ['$0', '<$100', '$100–500', '$500–1K', '$1–3K', '$3K+'],
+  },
+  {
+    key: 'testInterest', type: 'single', title: 'Would you be interested in testing an early version with us?',
+    options: ["Yes — I'd like to test it", "Yes — and I'd be open to giving feedback", 'Just notify me when it launches'],
+  },
+]
+
 const FORMATS = [
   'Product Launch', 'Founder Story', 'Problem → Solution', 'Testimonial',
   'Comparison', 'How-To', 'Unboxing', 'Before & After', 'Meme',
@@ -23,6 +91,30 @@ const INDUSTRIES = [
   'Coffee & F&B', 'Home & Living', 'Mobile Apps',
 ]
 
+function submitToGoogleForm(fields: Record<string, string | string[]>) {
+  const iframe = document.createElement('iframe')
+  iframe.name = 'prism-ea-frame'
+  iframe.style.display = 'none'
+  document.body.appendChild(iframe)
+  const form = document.createElement('form')
+  form.method = 'POST'
+  form.action = GOOGLE_FORM_URL
+  form.target = 'prism-ea-frame'
+  Object.entries(fields).forEach(([name, value]) => {
+    const values = Array.isArray(value) ? value : [value]
+    values.forEach((v) => {
+      if (!v) return
+      const input = document.createElement('input')
+      input.name = name
+      input.value = v
+      form.appendChild(input)
+    })
+  })
+  document.body.appendChild(form)
+  form.submit()
+  setTimeout(() => { document.body.removeChild(form); document.body.removeChild(iframe) }, 2000)
+}
+
 function useEarlyAccess() {
   const [email, setEmail] = useState('')
   const [state, setState] = useState<'idle' | 'invalid' | 'loading' | 'success'>('idle')
@@ -32,32 +124,137 @@ function useEarlyAccess() {
     const normalized = email.trim().toLowerCase()
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) { setState('invalid'); return }
     setState('loading')
-
-    const iframe = document.createElement('iframe')
-    iframe.name = 'prism-ea-frame'
-    iframe.style.display = 'none'
-    document.body.appendChild(iframe)
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = GOOGLE_FORM_URL
-    form.target = 'prism-ea-frame'
-    const input = document.createElement('input')
-    input.name = ENTRY_ID
-    input.value = normalized
-    form.appendChild(input)
-    document.body.appendChild(form)
-    form.submit()
-    setTimeout(() => { document.body.removeChild(form); document.body.removeChild(iframe) }, 2000)
-
+    submitToGoogleForm({ [ENTRY_ID]: normalized })
     setState('success')
-    setEmail('')
   }
 
   return { email, setEmail, state, setState, submit }
 }
 
+function ProfileQuiz({ email, onFinish }: { email: string; onFinish: () => void }) {
+  const [step, setStep] = useState(0)
+  const [answers, setAnswers] = useState<ProfileAnswers>(EMPTY_PROFILE)
+  const question = QUESTIONS[step]
+  const isLast = step === QUESTIONS.length - 1
+
+  const finish = (finalAnswers: ProfileAnswers) => {
+    submitToGoogleForm({
+      [ENTRY_ID]: email,
+      [PROFILE_ENTRY_IDS.role]: finalAnswers.role,
+      [PROFILE_ENTRY_IDS.adSpend]: finalAnswers.adSpend,
+      [PROFILE_ENTRY_IDS.creativesPerMonth]: finalAnswers.creativesPerMonth,
+      [PROFILE_ENTRY_IDS.currentMethod]: finalAnswers.currentMethod,
+      [PROFILE_ENTRY_IDS.painPoint]: finalAnswers.painPoint,
+      [PROFILE_ENTRY_IDS.prismHelp]: finalAnswers.prismHelp,
+      [PROFILE_ENTRY_IDS.toolSpend]: finalAnswers.toolSpend,
+      [PROFILE_ENTRY_IDS.testInterest]: finalAnswers.testInterest,
+    })
+    onFinish()
+  }
+
+  const goNext = (updated: ProfileAnswers) => {
+    if (isLast) { finish(updated); return }
+    setStep((s) => s + 1)
+  }
+
+  const selectSingle = (value: string) => {
+    const updated = { ...answers, [question.key]: value }
+    setAnswers(updated)
+    goNext(updated)
+  }
+
+  const toggleMulti = (value: string) => {
+    const current = answers[question.key] as string[]
+    const updated = {
+      ...answers,
+      [question.key]: current.includes(value) ? current.filter((v) => v !== value) : [...current, value],
+    }
+    setAnswers(updated)
+  }
+
+  const setText = (value: string) => {
+    setAnswers({ ...answers, [question.key]: value })
+  }
+
+  return (
+    <div className="quiz">
+      <div className="quiz-progress">
+        {QUESTIONS.map((_, i) => (
+          <span key={i} className={`quiz-dot ${i === step ? 'quiz-dot-active' : ''} ${i < step ? 'quiz-dot-done' : ''}`} />
+        ))}
+      </div>
+
+      <p className="quiz-title">{question.title}</p>
+
+      {question.type === 'single' && (
+        <div className="quiz-options">
+          {question.options.map((opt) => (
+            <button key={opt} type="button" className="quiz-chip" onClick={() => selectSingle(opt)}>
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {question.type === 'multi' && (
+        <>
+          <div className="quiz-options">
+            {question.options.map((opt) => {
+              const selected = (answers[question.key] as string[]).includes(opt)
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`quiz-chip ${selected ? 'quiz-chip-selected' : ''}`}
+                  onClick={() => toggleMulti(opt)}
+                >
+                  {selected && <span className="quiz-check">✓</span>}{opt}
+                </button>
+              )
+            })}
+          </div>
+          <button type="button" className="quiz-continue" onClick={() => goNext(answers)}>
+            {isLast ? 'Get early access →' : 'Continue →'}
+          </button>
+        </>
+      )}
+
+      {question.type === 'text' && (
+        <>
+          <textarea
+            className="quiz-textarea"
+            placeholder={question.placeholder}
+            value={answers[question.key] as string}
+            onChange={(e) => setText(e.target.value)}
+            rows={3}
+          />
+          <button type="button" className="quiz-continue" onClick={() => goNext(answers)}>
+            {isLast ? 'Get early access →' : 'Continue →'}
+          </button>
+        </>
+      )}
+
+      <button type="button" className="quiz-skip" onClick={onFinish}>
+        Skip this question
+      </button>
+    </div>
+  )
+}
+
 function EarlyAccessForm({ id, variant }: { id?: string; variant?: 'hero' | 'section' }) {
   const { email, setEmail, state, setState, submit } = useEarlyAccess()
+  const [phase, setPhase] = useState<'quiz' | 'done'>('quiz')
+
+  if (state === 'success' && phase === 'quiz') {
+    return (
+      <div className={`ea-success ${variant === 'section' ? 'ea-success-section' : ''}`}>
+        <p className="ea-success-icon">✦</p>
+        <p className="ea-success-title">You're in.</p>
+        <p className="ea-success-sub">Help us build this for you — 8 quick questions, skip anytime.</p>
+        <ProfileQuiz email={email} onFinish={() => setPhase('done')} />
+      </div>
+    )
+  }
 
   if (state === 'success') {
     return (
